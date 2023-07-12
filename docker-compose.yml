@@ -1,0 +1,45 @@
+version: '3'
+
+networks: 
+  mysql-compose-network:
+    driver: bridge
+
+services:
+  mysql-development:
+    image: mysql:8.0.17
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Pl33nkml1_
+      MYSQL_DATABASE: "testedb"
+    ports:
+      - "3306:3306"
+    networks:
+      - mysql-compose-network
+  check-db-started: 
+    image: jwilder/dockerize:0.6.1
+    container_name: check-db
+    depends_on:
+      - mysql-development
+    command: 'dockerize -wait=tcp://mysql-development:3306'
+    networks:
+      - mysql-compose-network
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+    networks:
+      - mysql-compose-network
+  app:
+    container_name: approoms
+    build:
+      context: .
+      dockerfile: ./MyRooms.Bff/Dockerfile
+    depends_on:
+      - check-db-started
+    ports:
+      - "8082:80"
+      - "8083:443"
+    networks:
+      - mysql-compose-network
